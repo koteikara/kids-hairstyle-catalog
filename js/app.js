@@ -41,19 +41,39 @@
   const isCandidate = (s, field, val) => { const v = variantOf(s, field); return !!v && v.values.some(x => String(x) === String(val)); };
 
   // その髪型で選ぶ軸と、軸ごとの選択肢
+  // その髪型で使う軸。髪型に axes があればその順で使う（長い髪型用）。なければ短い髪型の標準の軸
+  const isGirl = s => s.gender === 'girl';
   function axesFor(s) {
-    return AXES.filter(a => {
-      if (a.onlyVariants) return !!variantOf(s, a.key);
-      if (a.key === 'bang') return !['none', 'up', 'spiky'].includes(s.params.bangShape);
-      return true;
-    }).map(a => a.key === 'bangShape'
-      ? Object.assign({}, a, { options: variantOf(s, 'bangShape').values.map(v => [v, L.bangShape[v], ''] ) })
-      : a);
+    const list = s.axes
+      ? s.axes.map(k => AXES.find(a => a.key === k)).filter(Boolean)
+      : AXES.filter(a => {
+        if (a.explicit) return false;
+        if (a.onlyVariants) return !!variantOf(s, a.key);
+        if (a.key === 'bang') return !['none', 'up', 'spiky'].includes(s.params.bangShape);
+        return true;
+      });
+    return list.map(a => {
+      if (a.key === 'bangShape') {
+        const v = variantOf(s, 'bangShape');
+        const vals = v ? v.values : [s.params.bangShape];
+        return Object.assign({}, a, { options: vals.map(x => [x, L.bangShape[x], '']) });
+      }
+      if (a.key === 'set' && !s.axes) return Object.assign({}, a, { options: a.options.filter(o => o[3] !== 'long') });
+      if (a.key === 'set' && isGirl(s)) return Object.assign({}, a, { options: a.options.filter(o => !['waxlight', 'wax'].includes(o[0])) });
+      // 長さの位置は、その髪型の候補だけ（候補がなければ見本と、ひとつ短い位置）
+      if (a.key === 'hairLength') {
+        const v = variantOf(s, 'hairLength');
+        const i = a.options.findIndex(o => o[0] === s.params.hairLength);
+        const vals = v ? v.values : a.options.slice(Math.max(0, i - 1), i + 1).map(o => o[0]);
+        return Object.assign({}, a, { options: a.options.filter(o => vals.includes(o[0])) });
+      }
+      return a;
+    });
   }
   const axisDef = (s, key) => axesFor(s).find(a => a.key === key) || AXES.find(a => a.key === key);
   function standardOf(s, key) {
     if (key === 'len' || key === 'bang') return 0;
-    if (key === 'set') return setOf(s);
+    if (key === 'set') return s.set || setOf(s);
     return s.params[key];
   }
   function valueLabel(s, key, v) {
@@ -132,6 +152,7 @@
       case 'top': return String(Math.max(1, p.top));
       case 'bang': return ['up', 'spiky', 'sideup'].includes(p.bangShape) ? 'up' : p.bang;
       case 'fade': return String(p.fade);
+      case 'group': return s.group || 'short';
       case 'effort': return String(s.effort);
       case 'wax': return s.wax;
       default: return p[key];
@@ -174,10 +195,13 @@
   function pic(s, view, label) {
     const img = window.HM_IMAGES[s.id] && window.HM_IMAGES[s.id][view];
     const alt = label || `${s.name}（${VIEW_NAME[view]}）`;
-    return `<div class="art">${img ? imgTag(img, alt) : IL.render(s.params, view, { label: alt })}</div>`;
+    if (img) return `<div class="art">${imgTag(img, alt)}</div>`;
+    if (isGirl(s)) return `<div class="art ph"><span>イラスト<br>準備中</span></div>`;   // 男の子用の簡易図は使わない
+    return `<div class="art">${IL.render(s.params, view, { label: alt })}</div>`;
   }
   // 比較画像：登録があれば画像。刈り上げだけは、画像がなくても簡易図で代わりに描く
-  const compareSrc = (key, view, v) => ((window.HM_COMPARE_IMAGES[key] || {})[view] || {})[v] || null;
+  // 比較画像は男の子のモデルで作っているので、女の子の髪型では使わない
+  const compareSrc = (key, view, v, s) => (s && isGirl(s)) ? null : (((window.HM_COMPARE_IMAGES[key] || {})[view] || {})[v] || null);
   const compareMeta = key => window.HM_COMPARE_AXES.find(c => c.key === key);
   const compareReady = key => !!window.HM_COMPARE_IMAGES[key];
   function comparePic(key, view, v, fallbackParams) {
@@ -197,7 +221,9 @@
   };
   const pickView = (key, where) => key === 'fade' ? (where === 'consult' ? 'back' : 'side') : compareViews(key)[0];
   const meter = (n, max) => `<span class="meter" aria-label="${n}/${max}">${Array.from({ length: max }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
-  const tagFor = s => s.params.fade >= 2 ? `刈り上げ ${L.fade[s.params.fade]}` : `セット ${L.effort[s.effort]}`;
+  const tagFor = s => isGirl(s) ? `長さ ${L.hairLength[s.params.hairLength] || ''}` : s.params.fade >= 2 ? `刈り上げ ${L.fade[s.params.fade]}` : `セット ${L.effort[s.effort]}`;
+  // 相談メモでいちばん大きく出す項目（短い髪型は刈り上げ、長い髪型は全体の長さ）
+  const primaryKey = s => isGirl(s) ? 'hairLength' : 'fade';
 
   function appbar(left, right) {
     return `<header class="appbar">${left}${right || ''}</header>`;
@@ -265,7 +291,7 @@
           <button class="tag" data-act="open-filter">しぼりこみ ▾</button>
         </span></div>`;
     gr.innerHTML = list.length
-      ? `<div class="grid">${list.map(cell).join('')}</div><p class="list-note">女の子の髪型は準備中です。</p><div class="list-end">— END OF LIST —</div>`
+      ? `<div class="grid">${list.map(cell).join('')}</div>${S.some(isGirl) ? '' : '<p class="list-note">女の子の髪型は準備中です。</p>'}<div class="list-end">— END OF LIST —</div>`
       : `<div class="empty">条件に合う髪型がありません。<br>条件を少しへらしてみてください。</div>`;
   }
 
@@ -297,19 +323,12 @@
       <section class="sec"><p class="kidline">${esc(s.kid)}</p></section>
       <section class="sec">
         <div class="sec-title"><h2>髪型のとくちょう</h2><span class="en">SPEC</span></div>
-        <table class="spec">
-          <tr><th>全体の長さ</th><td><b>${L.top[p.top]}</b></td></tr>
-          <tr><th>前髪</th><td>${p.bangShape === 'none' ? `<b>${L.bang.none}</b>` : `<b>${L.bang[p.bang]}</b>・${L.bangShape[p.bangShape]}`}</td></tr>
-          <tr><th>耳まわり</th><td><b>${L.ear[p.ear]}</b></td></tr>
-          <tr><th>刈り上げ</th><td><b>${L.fade[p.fade]}</b> ${meter(p.fade, 3)}<small>${esc(fadeText(s, p.fade))}</small></td></tr>
-          <tr><th>襟足</th><td><b>${L.nape[p.nape]}</b></td></tr>
-          <tr><th>セット</th><td><b>${L.effort[s.effort]}</b>・${L.wax[s.wax]}</td></tr>
-        </table>
+        ${specTable(s)}
       </section>
-      <section class="sec">
+      ${isGirl(s) ? '' : `<section class="sec">
         <div class="sec-title"><h2>違いを比べる</h2><span class="en">COMPARE</span></div>
         ${compareSection(s)}
-      </section>
+      </section>`}
       ${(s.variants || []).length ? `<section class="sec">
         <div class="sec-title"><h2>この髪型で選べる形</h2><span class="en">VARIATIONS</span></div>
         <ul class="variants">${s.variants.map(v => `<li><b>${axisDef(s, v.field).label}</b>
@@ -326,6 +345,28 @@
         <ul class="bullets">${s.stylist.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
       </section>
       <div class="bottombar"><a class="btn red" href="#/make/${s.id}">この髪型で相談メモを作る <span class="arrow">→</span></a></div>`;
+  }
+
+  // 髪型のとくちょうの表（短い髪型と長い髪型で項目を分ける）
+  function specTable(s) {
+    const p = s.params;
+    const bangTxt = p.bangShape === 'none' ? `<b>${L.bang.none}</b>` : p.bangShape === 'grown' ? `<b>${L.bangShape.grown}</b>` : `<b>${L.bang[p.bang] || ''}</b>・${L.bangShape[p.bangShape]}`;
+    const rows = isGirl(s) ? [
+      ['全体の長さ', `<b>${L.hairLength[p.hairLength]}</b>`],
+      ['前髪', bangTxt],
+      ['段', `<b>${L.layer[p.layer]}</b>`],
+      ['顔まわり', `<b>${L.faceFrame[p.faceFrame]}</b>`],
+      ['耳まわり', `<b>${L.ear[p.ear]}</b>`],
+      ['セット', `<b>${L.effort[s.effort]}</b>`]
+    ] : [
+      ['全体の長さ', `<b>${L.top[p.top]}</b>`],
+      ['前髪', bangTxt],
+      ['耳まわり', `<b>${L.ear[p.ear]}</b>`],
+      ['刈り上げ', `<b>${L.fade[p.fade]}</b> ${meter(p.fade, 3)}<small>${esc(fadeText(s, p.fade))}</small>`],
+      ['襟足', `<b>${L.nape[p.nape]}</b>`],
+      ['セット', `<b>${L.effort[s.effort]}</b>・${L.wax[s.wax]}`]
+    ];
+    return `<table class="spec">${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</table>`;
   }
 
   // 違いを比べる：軸のタブ、向きの切りかえ、同じ頭で値だけが違う比較画像
@@ -360,7 +401,7 @@
         <div class="options">
           ${a.options.map(([v, t, d]) => {
             const on = String(cur) === String(v);
-            const img = (a.compare || compareSrc(a.key, pickView(a.key), v)) ? comparePic(a.key, pickView(a.key), v, s.params) : '';
+            const img = !isGirl(s) && (a.compare || compareSrc(a.key, pickView(a.key), v)) ? comparePic(a.key, pickView(a.key), v, s.params) : '';
             return `<button class="opt ${img ? 'has-art' : ''} ${on ? 'on' : ''}" data-act="pick" data-key="${a.key}" data-val="${v}" aria-pressed="${on}">
               ${img}<span class="txt"><b>${esc(t)}${String(v) === String(std) ? '<span class="std">STANDARD</span>' : isCandidate(s, a.key, v) ? '<span class="std cand">候補</span>' : ''}</b>${d ? `<small>${esc(d)}</small>` : ''}</span><span class="radio"></span></button>`;
           }).join('')}
@@ -383,7 +424,7 @@
   // ───────── 相談メモ ─────────
   function memoRows(s, m, opts) {
     const eff = effective(m);
-    const rows = axesFor(s).filter(a => a.key !== 'fade').map(a => {
+    const rows = axesFor(s).filter(a => a.key !== primaryKey(s)).map(a => {
       const v = eff[a.key];
       const changed = m.agreed.axes[a.key] !== undefined && String(m.agreed.axes[a.key]) !== String(m.wish.axes[a.key]);
       const ask = v === UNSURE;
@@ -394,15 +435,15 @@
     return rows.join('');
   }
   function memoCard(s, m) {
-    const eff = effective(m), f = eff.fade;
+    const eff = effective(m), pk = primaryKey(s), f = eff[pk];
     const agreed = m.status === 'agreed';
     return `<article class="pass" id="pass">
       <div class="pass-head"><span class="en">HAIR MEMO</span><span class="who">${m.child.nickname ? esc(m.child.nickname) + ' さん' : ''}</span></div>
       <div class="pass-main">
         <div class="label">${agreed ? '美容師さんと決めた髪型' : '美容師さん、この髪型にしたいです'}</div>
         <div class="style">${esc(s.name)}</div>
-        <div class="primary"><span class="k">刈り上げ</span>${f === UNSURE ? '<span class="askv">相談したい</span>' : `${esc(valueLabel(s, 'fade', f))} ${meter(f, 3)}`}
-          ${m.agreed.axes.fade !== undefined && String(m.agreed.axes.fade) !== String(m.wish.axes.fade) ? '<i class="chg">変更</i>' : ''}</div>
+        <div class="primary"><span class="k">${axisDef(s, pk).label}</span>${f === UNSURE ? '<span class="askv">相談したい</span>' : `${esc(valueLabel(s, pk, f))} ${pk === 'fade' ? meter(f, 3) : ''}`}
+          ${m.agreed.axes[pk] !== undefined && String(m.agreed.axes[pk]) !== String(m.wish.axes[pk]) ? '<i class="chg">変更</i>' : ''}</div>
       </div>
       <div class="pass-views">${['front', 'side', 'back'].map(v => pic(s, v)).join('')}</div>
       <div class="rows">${memoRows(s, m)}</div>
@@ -467,7 +508,7 @@
     const pick = c.pick !== null ? c.pick : (agreedV !== undefined ? agreedV : wish);
     const decided = k => m.agreed.axes[k] !== undefined;
     const cv = pickView(a.key, 'consult');
-    const withArt = a.compare || a.options.some(([v]) => compareSrc(a.key, cv, v));
+    const withArt = !isGirl(s) && (a.compare || a.options.some(([v]) => compareSrc(a.key, cv, v)));
     const optionHtml = a.options.map(([v, t]) => {
       const isWish = String(v) === String(wish), isPick = String(v) === String(pick);
       return `<button class="c-opt ${withArt ? 'has-art' : ''} ${isPick ? 'pick' : ''}" data-act="c-pick" data-val="${v}" aria-pressed="${isPick}">

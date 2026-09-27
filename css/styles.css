@@ -314,3 +314,6 @@ img { display: block; }
   body, .app { background: #fff; }
   .app { max-width: none; padding: 0; }
 }
+
+/* 画像がまだない髪型 */
+.art.ph { aspect-ratio: 10 / 11; display: grid; place-items: center; text-align: center; font-size: 12px; font-weight: 700; color: var(--mute); background: repeating-linear-gradient(45deg, #fff 0 8px, var(--panel) 8px 16px); }

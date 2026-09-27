@@ -6,6 +6,7 @@
 //   ear      : 耳まわり out / half / cover
 //   nape     : 襟足 short / mid / long
 //   fade     : 刈り上げ 0=なし 1=低め 2=中くらい 3=高め
+//   （女の子の髪型）hairLength: 長さの位置 / layer: 段 / faceFrame: 顔まわり / tie: 結べる長さ。top は使わない
 // base は人気表示用の仮の集計値（閲覧・いいね・保存・カード作成）。
 // params は見本イラストに描く「標準形」。正解として固定するものではない。
 // variants は「その髪型で選べるバリエーション候補」。参考写真などで違いが見つかった項目を
@@ -21,8 +22,14 @@ window.HM_LABELS = {
   bangShape: {
     natural: '自然におろす', straight: 'まっすぐそろえる', side: '横に流す',
     center: 'まん中で分ける', up: '上げておでこを出す', spiky: 'ツンツン立たせる',
-    sideup: 'おでこを出して横に流す', none: '—'
+    sideup: 'おでこを出して横に流す', grown: '前髪なし（伸ばして分ける）', none: '—'
   },
+  // 長い髪型用（女の子の髪型）。長さは体の位置で示す
+  hairLength: { chinUp: 'あご上', chin: 'あご', shoulderUp: '肩上', shoulder: '肩', collarbone: '鎖骨', chest: '胸' },
+  layer: { none: '段なし（重め）', light: '段を少し', strong: '段をしっかり' },
+  faceFrame: { none: 'そのまま', frame: '顔まわりに段' },
+  tie: { keep: '結べる長さを残す', free: 'こだわらない' },
+  group: { short: 'ショート', bob: 'ボブ', medium: 'ミディアム', long: 'ロング' },
   ear: { out: '耳を出す', half: '耳に半分かかる', cover: '耳がかくれる' },
   nape: { short: '短め（すっきり）', mid: 'ふつう', long: '長め' },
   fade: ['なし', '低め', '中くらい', '高め'],
@@ -39,12 +46,14 @@ window.HM_LABELS = {
     none: '何もしない（くしでとかすだけ）',
     dryer: 'ドライヤーでかわかすだけ',
     waxlight: 'ワックスを少しつける',
-    wax: 'ワックスでしっかりセット'
+    wax: 'ワックスでしっかりセット',
+    tie: '結ぶ（ゴムでまとめる）'
   }
 };
 
 window.HM_FILTERS = [
-  { key: 'top', label: '全体の長さ', options: [['1', '短め'], ['2', 'ふつう'], ['3', '長め']] },
+  { key: 'group', label: '髪の長さ', options: [['short', 'ショート'], ['bob', 'ボブ'], ['medium', 'ミディアム'], ['long', 'ロング']] },
+  { key: 'top', label: 'ショートの長さ', options: [['1', '短め'], ['2', 'ふつう'], ['3', '長め']] },
   { key: 'bang', label: '前髪', options: [['none', 'ほぼなし'], ['short', '短め'], ['brow', 'まゆ毛くらい'], ['long', 'まゆ下'], ['up', '上げる・立てる']] },
   { key: 'ear', label: '耳まわり', options: [['out', '耳を出す'], ['half', '半分かかる'], ['cover', 'かくれる']] },
   { key: 'nape', label: '襟足', options: [['short', '短め'], ['mid', 'ふつう'], ['long', '長め']] },
@@ -54,11 +63,13 @@ window.HM_FILTERS = [
 ];
 
 window.HM_QUICK = [
+  { label: 'ショート', key: 'group', val: 'short' },
+  { label: 'ボブ', key: 'group', val: 'bob' },
+  { label: 'ミディアム', key: 'group', val: 'medium' },
+  { label: 'ロング', key: 'group', val: 'long' },
   { label: 'ワックスなし', key: 'wax', val: 'none' },
   { label: 'セットかんたん', key: 'effort', val: '1' },
-  { label: '刈り上げなし', key: 'fade', val: '0' },
-  { label: '耳を出す', key: 'ear', val: 'out' },
-  { label: '長め', key: 'top', val: '3' }
+  { label: '刈り上げなし', key: 'fade', val: '0' }
 ];
 
 window.HM_STYLES = [
@@ -189,7 +200,130 @@ window.HM_STYLES = [
     kid: 'まえがみを、よこにながすよ。ピシッとして、しゃしんをとるときにもいいね。',
     stylist: ['前髪をまゆ毛くらいで残し、横に流しやすくカット', '耳は出してすっきり', '襟足は低めに刈り上げ、分け目は子どもの毛流れに合わせて'],
     base: { view: 650, like: 90, save: 49, card: 24 }
+  },
+  // ───────── 女の子の髪型（2026-09-28 追加。参考は docs/references.csv の収集3回目） ─────────
+  // gender:'girl' の髪型は、axes に書いた項目だけを相談メモで選ぶ。長さは hairLength（体の位置）で示す
+  //   params.hairLength / layer / faceFrame / tie を使い、top は持たない。fade は常に 0（刈り上げなし）
+  {
+    id: 'g-roundshort', gender: 'girl', group: 'short', name: '丸みショート', catch: '後ろがまるくて、首すっきり',
+    params: { hairLength: 'chinUp', bang: 'brow', bangShape: 'natural', layer: 'light', faceFrame: 'none', ear: 'cover', nape: 'short', fade: 0, tie: 'free' },
+    axes: ['hairLength', 'bangShape', 'bang', 'ear', 'nape', 'set'],
+    variants: [
+      { field: 'hairLength', values: ['chinUp', 'chin'], basis: '参考3件は、横があご上〜あご' },
+      { field: 'bangShape', values: ['natural', 'straight'], basis: '子どもの実例では、一直線にそろえた前髪も多い' },
+      { field: 'ear', values: ['cover', 'half'], basis: 'さらに短くして、耳が半分出る形（ベリーショート寄り）も選べる' },
+      { field: 'nape', values: ['short', 'mid'], basis: '標準は首が見える短め。首に少しかかる長さも選べる' }
+    ],
+    kidNotes: '前髪は目にかからないまゆ上〜まゆ。毛先をざくざくさせず、内に丸くおさめる。カラー、パーマ、刈り上げは描かない',
+    set: 'none', effort: 1, wax: 'none', tags: ['さっぱり', 'かわかしやすい', '首すっきり'],
+    kid: 'うしろあたまが、まあるいかたち！ くびがすっきりして、あついひもかるいよ。',
+    stylist: ['横はあご上。後ろは襟足を短くして首を見せる', '後ろは下を短く上を長くして、後頭部に丸みを出す', '前髪はまゆ上〜まゆ毛くらいで自然に下ろす。耳はかくす'],
+    base: { view: 0, like: 0, save: 0, card: 0 }
+  },
+  {
+    id: 'g-shortbob', gender: 'girl', group: 'bob', name: 'ショートボブ', catch: 'あごの長さで、内にまるく',
+    params: { hairLength: 'chin', bang: 'brow', bangShape: 'natural', layer: 'light', faceFrame: 'none', ear: 'cover', nape: 'mid', fade: 0, tie: 'free' },
+    axes: ['hairLength', 'bangShape', 'bang', 'layer', 'ear', 'set'],
+    variants: [
+      { field: 'hairLength', values: ['chin', 'chinUp'], basis: '参考3件は、あご〜あご上' },
+      { field: 'bangShape', values: ['natural', 'straight', 'grown'], basis: '前髪なし（分けて流す）の実例が1件あった。一直線にそろえるとぱっつんボブに近づく' }
+    ],
+    variantNotes: ['前髪の厚さ：ふつう／軽め（すき間のある前髪）。軽めは大人っぽく見える'],
+    kidNotes: 'すき間の多い軽すぎる前髪にしない。アイロンで巻かず、カットの形で内に丸くおさまる程度。カラー、パーマ、強い前下がりは描かない',
+    set: 'none', effort: 1, wax: 'none', tags: ['定番', '学校向き'],
+    kid: 'あごのながさで、けさきがうちがわにくるんとまるまるよ。',
+    stylist: ['長さはあご。後ろの裾もあごの高さまで下ろす', '毛先は内に丸くおさまるように。後頭部に少し丸みを出す', '前髪はまゆ毛くらいで自然に下ろし、厚みを残す。耳はかくす'],
+    base: { view: 0, like: 0, save: 0, card: 0 }
+  },
+  {
+    id: 'g-pattsunbob', gender: 'girl', group: 'bob', name: 'ぱっつんボブ', catch: '前髪も毛先も、一直線',
+    params: { hairLength: 'chin', bang: 'brow', bangShape: 'straight', layer: 'none', faceFrame: 'none', ear: 'cover', nape: 'mid', fade: 0, tie: 'free' },
+    axes: ['hairLength', 'bang', 'layer', 'ear', 'set'],
+    variants: [
+      { field: 'hairLength', values: ['chin', 'shoulderUp'], basis: '参考4件は、あご〜あご下' }
+    ],
+    variantNotes: ['毛先：内に丸くおさまる／まっすぐストン', '前髪：まゆ上の短めは、幼児の実例に多い'],
+    kidNotes: '前髪はまゆ毛くらい（まゆよりかなり上にはしない）。カラー、インナーカラー、アイロンの外ハネは描かない',
+    set: 'none', effort: 1, wax: 'none', tags: ['かわいい', 'まとまる'],
+    kid: 'まえがみも、けさきも、まっすぐそろっているよ。つやつやで、まとまりやすい！',
+    stylist: ['長さはあご。段は入れず、裾は水平な一直線', '前髪はまゆ毛くらいで一直線にそろえる', '毛量は重めに残し、毛先は少し内に入る程度。耳はかくす'],
+    base: { view: 0, like: 0, save: 0, card: 0 }
+  },
+  {
+    id: 'g-bluntbob', gender: 'girl', group: 'bob', name: '切りっぱなしボブ', catch: '肩上で、まっすぐ切りそろえる',
+    params: { hairLength: 'shoulderUp', bang: 'brow', bangShape: 'natural', layer: 'none', faceFrame: 'none', ear: 'cover', nape: 'long', fade: 0, tie: 'free' },
+    axes: ['hairLength', 'bang', 'layer', 'ear', 'set'],
+    variants: [
+      { field: 'hairLength', values: ['shoulderUp', 'chin'], basis: '参考3件は肩上が多く、あご下の短めの例もあった' }
+    ],
+    variantNotes: ['毛先：まっすぐストン／肩に当たって自然に外にはねる', '前髪なし（センター分け・横分け）：子どもの実例は見つかっていない'],
+    kidNotes: 'アイロンの強い外巻き、スタイリング剤の束感、カラーは描かない。外はねは肩に当たって自然にはねる程度',
+    set: 'none', effort: 1, wax: 'none', tags: ['かわかしやすい', 'おしゃれ'],
+    kid: 'かたの上で、まっすぐきりそろえるよ。けさきがかたにあたって、ちょっとはねるのもかわいい。',
+    stylist: ['長さは肩上（肩につかないくらい）。段は入れない', '裾は水平にまっすぐ切りそろえる。外はねはアイロンなしの自然な程度', '前髪はまゆ毛くらいで自然に下ろす（ぱっつんほどきっちりさせない）'],
+    base: { view: 0, like: 0, save: 0, card: 0 }
+  },
+  {
+    id: 'g-medium', gender: 'girl', group: 'medium', name: 'ミディアム', catch: '結べる長さで、顔まわりかるく',
+    params: { hairLength: 'shoulder', bang: 'brow', bangShape: 'natural', layer: 'light', faceFrame: 'frame', ear: 'cover', nape: 'long', fade: 0, tie: 'keep' },
+    axes: ['hairLength', 'bangShape', 'bang', 'layer', 'faceFrame', 'tie', 'set'],
+    variants: [
+      { field: 'hairLength', values: ['shoulder', 'collarbone'], basis: '参考4件は肩〜鎖骨' },
+      { field: 'bangShape', values: ['natural', 'straight', 'grown'], basis: '前髪は、一直線・軽く流す・なしの例があった' },
+      { field: 'faceFrame', values: ['frame', 'none'], basis: '子どもの実例は「結べる長さを残して、顔まわりにだけ段」' }
+    ],
+    variantNotes: ['毛先：肩に当たって外にはねる／内に丸くおさまる'],
+    kidNotes: '段は低い位置と顔まわりだけ。シャギーやウルフのような強い段、巻き髪、カラー、パーマは描かない',
+    set: 'none', effort: 1, wax: 'none', tags: ['結べる', '学校向き'],
+    kid: 'かたくらいのながさで、むすぶこともできるよ。かおのまわりがかるくなるよ。',
+    stylist: ['長さは肩〜鎖骨。ひとつに結べる長さを残す', '段は低い位置に少しだけ。顔まわりに軽く段を入れる', '前髪はまゆ毛くらいで自然に下ろす'],
+    base: { view: 0, like: 0, save: 0, card: 0 }
+  },
+  {
+    id: 'g-pattsunlong', gender: 'girl', group: 'long', name: 'ぱっつんロング', catch: 'まっすぐ前髪と、さらさらロング',
+    params: { hairLength: 'chest', bang: 'brow', bangShape: 'straight', layer: 'none', faceFrame: 'none', ear: 'cover', nape: 'long', fade: 0, tie: 'keep' },
+    axes: ['hairLength', 'bang', 'layer', 'faceFrame', 'set'],
+    variants: [
+      { field: 'hairLength', values: ['chest', 'collarbone'], basis: '子どもの実例はロングとだけ書かれ、鎖骨下〜胸を候補にした' }
+    ],
+    variantNotes: ['前髪の厚み：ふつう／厚め'],
+    kidNotes: '顔まわりの段、カラー、パーマ、巻き髪、すき間の多い前髪は描かない。横の髪は耳をかくしてまっすぐ下ろす',
+    set: 'none', effort: 1, wax: 'none', tags: ['のばしたい子に', '結べる'],
+    kid: 'まえがみはまっすぐ、うしろはむねまでのびた、さらさらのかみだよ。',
+    stylist: ['長さは胸。段は入れず、毛先はまっすぐ切りそろえる', '前髪はまゆ上〜まゆ毛くらいで一直線にそろえる', '横の髪も段なしでまっすぐ下ろす'],
+    base: { view: 0, like: 0, save: 0, card: 0 }
+  },
+  {
+    id: 'g-nobanglong', gender: 'girl', group: 'long', name: '前髪なしロング', catch: 'おでこを出して、すっきり大人っぽく',
+    params: { hairLength: 'chest', bang: 'none', bangShape: 'grown', layer: 'none', faceFrame: 'none', ear: 'cover', nape: 'long', fade: 0, tie: 'keep' },
+    axes: ['hairLength', 'layer', 'faceFrame', 'set'],
+    variants: [
+      { field: 'faceFrame', values: ['none', 'frame'], basis: '顔まわりだけ、あご下で少し軽くする形もある（段を強くすると顔まわりレイヤーロングになる）' }
+    ],
+    variantNotes: ['分け目：まん中／少し横寄り（7:3）', '長さ：背中の中ほどまでのばす（スーパーロング）'],
+    kidNotes: '巻き髪、カラー、かきあげの強いセットは描かない。顔まわりははっきりした段を入れず、あごより下で後ろの毛となじませる',
+    set: 'none', effort: 1, wax: 'none', tags: ['のばしたい子に', '結べる', '前髪なし'],
+    kid: 'まえがみをのばして、まんなかでわけるよ。おでこが見えて、すっきり！',
+    stylist: ['長さは胸（後ろは肩甲骨の下）', '前髪は作らず、まん中か少し横寄りで分ける。伸ばした前髪はあごより下で後ろとなじませる', '段は入れず、毛先はまっすぐ。量は少しだけ減らして扱いやすく'],
+    base: { view: 0, like: 0, save: 0, card: 0 }
+  },
+  {
+    id: 'g-layerlong', gender: 'girl', group: 'long', name: '顔まわりレイヤーロング', catch: '顔まわりに段で、かるく動く',
+    params: { hairLength: 'chest', bang: 'none', bangShape: 'grown', layer: 'light', faceFrame: 'frame', ear: 'cover', nape: 'long', fade: 0, tie: 'keep' },
+    axes: ['hairLength', 'bangShape', 'layer', 'faceFrame', 'set'],
+    variants: [
+      { field: 'hairLength', values: ['chest', 'collarbone'], basis: '子どもの実例は鎖骨〜胸の上が多い' },
+      { field: 'bangShape', values: ['grown', 'side', 'straight'], basis: '前髪なしが多く、長めを横に流す例、まゆ上のぱっつんと合わせる例もあった' },
+      { field: 'layer', values: ['light', 'strong'], basis: '段は顔まわりだけ／顔まわりと表面にも' }
+    ],
+    variantNotes: ['顔まわりのいちばん短い毛：あご／あご下'],
+    kidNotes: '後ろの段は控えめにし、首まわりのくびれ（ウルフ）は作らない。巻き髪、カラー、強いシャギーは描かない',
+    set: 'none', effort: 1, wax: 'none', tags: ['のばしたい子に', '結べる', 'おしゃれ'],
+    kid: 'かおのまわりのかみを、だんだんにみじかくするよ。うごきが出て、かるいかんじ。',
+    stylist: ['長さは胸（後ろは肩甲骨の下）', '顔まわりにあご下から段を入れ、毛先へ向かって長くつなげる', '後ろの段は控えめに。首まわりはくびれさせない'],
+    base: { view: 0, like: 0, save: 0, card: 0 }
   }
+
 ];
 
 // 統合した髪型のIDの読みかえ。保存済みのいいね・カード・共有リンクが古いIDでも開けるようにする。
@@ -260,7 +394,16 @@ window.HM_AXES = [
   { key: 'nape', label: '襟足', en: 'NAPE', q: '襟足（首の後ろ）は？', hint: '首すじを見せるか、少し残すか。',
     options: [['short', '短め', '首すじが見える'], ['mid', 'ふつう', '自然に残す'], ['long', '長め', '首すじに少しかかる']] },
   { key: 'set', label: 'ふだんのセット', en: 'STYLING', q: 'ふだんのセットは？', hint: '朝、どこまでやる？',
-    options: [['none', '何もしない', 'くしでとかすだけ'], ['dryer', 'ドライヤー', 'かわかすだけ'], ['waxlight', 'ワックス少し', '毛先を整える'], ['wax', 'ワックスしっかり', '毎朝セットする']] }
+    options: [['none', '何もしない', 'くしでとかすだけ'], ['dryer', 'ドライヤー', 'かわかすだけ'], ['waxlight', 'ワックス少し', '毛先を整える'], ['wax', 'ワックスしっかり', '毎朝セットする'], ['tie', '結ぶ', 'ゴムでまとめる', 'long']] },
+  // ここから下は、髪型の axes に書いたときだけ使う（長い髪型用）
+  { key: 'hairLength', label: '全体の長さ', en: 'LENGTH', q: 'どこまでの長さにする？', hint: '体の位置でえらんでね。', explicit: true,
+    options: [['chinUp', 'あご上', ''], ['chin', 'あご', ''], ['shoulderUp', '肩上', '肩につかない'], ['shoulder', '肩', '肩につく'], ['collarbone', '鎖骨', ''], ['chest', '胸', '']] },
+  { key: 'layer', label: '段（レイヤー）', en: 'LAYER', q: '段は入れる？', hint: '段を入れると軽く、動きが出る。', explicit: true,
+    options: [['none', '入れない', '重めで、毛先が一直線'], ['light', '少し', '毛先を軽く'], ['strong', 'しっかり', '動きが出る']] },
+  { key: 'faceFrame', label: '顔まわり', en: 'FACE', q: '顔まわりはどうする？', hint: '顔のまわりに短い毛を作ると、軽く見える。', explicit: true,
+    options: [['none', 'そのまま', ''], ['frame', '顔まわりに段', '顔のまわりを軽く']] },
+  { key: 'tie', label: '結べる長さ', en: 'TIE', q: '結べる長さを残す？', hint: 'ポニーテールや、体育のときに結べるか。', explicit: true,
+    options: [['keep', '残す', '結べる長さ'], ['free', 'こだわらない', '']] }
 ];
 
 // 編集部のおすすめ（ホームに並べる順）。人気の数字は表示しない（docs/spec.md 8章の決定8）
@@ -270,7 +413,9 @@ window.HM_PICKS = ['natural', 'twoblock', 'mash', 'sports', 'centerpart', 'upban
 (function () {
   const EN = {
     sports: 'SPORTS CUT', buzz: 'BUZZ CUT', twoblock: 'TWO BLOCK', natural: 'NATURAL SHORT', mash: 'MUSHROOM',
-    upbang: 'UP BANG', softmohi: 'SOFT MOHAWK', centerpart: 'CENTER PART', longmash: 'LONG MUSHROOM', sidepart: 'SIDE PART'
+    upbang: 'UP BANG', softmohi: 'SOFT MOHAWK', centerpart: 'CENTER PART', longmash: 'LONG MUSHROOM', sidepart: 'SIDE PART',
+    'g-roundshort': 'ROUND SHORT', 'g-shortbob': 'SHORT BOB', 'g-pattsunbob': 'BLUNT BANG BOB', 'g-bluntbob': 'BLUNT CUT BOB',
+    'g-medium': 'MEDIUM', 'g-pattsunlong': 'BLUNT BANG LONG', 'g-nobanglong': 'NO BANG LONG', 'g-layerlong': 'FACE LAYER LONG'
   };
   window.HM_STYLES.forEach((s, i) => { s.en = EN[s.id] || ''; s.no = String(i + 1).padStart(2, '0'); });
 })();
