@@ -187,7 +187,15 @@
     return '';
   }
   // 希望を選ぶ・相談モードで使う向き（刈り上げは横／後ろ、ほかは基本の向き）
-  const pickView = (key, where) => key === 'fade' ? (where === 'consult' ? 'back' : 'side') : ((compareMeta(key) || {}).views || ['front'])[0];
+  // 画像が登録されている向きだけを使う（刈り上げは簡易図があるので全部の向き）
+  const compareViews = key => {
+    const meta = compareMeta(key);
+    if (!meta) return ['front'];
+    if (key === 'fade') return meta.views;
+    const ok = meta.views.filter(v => (window.HM_COMPARE_IMAGES[key] || {})[v]);
+    return ok.length ? ok : meta.views;
+  };
+  const pickView = (key, where) => key === 'fade' ? (where === 'consult' ? 'back' : 'side') : compareViews(key)[0];
   const meter = (n, max) => `<span class="meter" aria-label="${n}/${max}">${Array.from({ length: max }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
   const tagFor = s => s.params.fade >= 2 ? `刈り上げ ${L.fade[s.params.fade]}` : `セット ${L.effort[s.effort]}`;
 
@@ -323,13 +331,14 @@
   // 違いを比べる：軸のタブ、向きの切りかえ、同じ頭で値だけが違う比較画像
   function compareSection(s) {
     const meta = compareMeta(ui.compareAxis) && compareReady(ui.compareAxis) ? compareMeta(ui.compareAxis) : compareMeta('fade');
-    const view = meta.views.includes(ui.compareView) ? ui.compareView : meta.views[0];
+    const views = compareViews(meta.key);
+    const view = views.includes(ui.compareView) ? ui.compareView : views[0];
     const std = s.params[meta.key];
     const label = v => meta.key === 'fade' ? L.fade[v] : (L[meta.key] || {})[v] || v;
     return `<div class="axis-tabs">${window.HM_COMPARE_AXES.map(c => compareReady(c.key)
         ? `<button class="${c.key === meta.key ? 'on' : ''}" data-act="compare-axis" data-key="${c.key}">${c.label}</button>`
         : `<span class="off">${c.label}<small>準備中</small></span>`).join('')}</div>
-      <div class="seg small">${meta.views.map(v => `<button class="${view === v ? 'on' : ''}" data-act="compare-view" data-view="${v}">${VIEW_NAME[v]}から</button>`).join('')}</div>
+      <div class="seg small">${views.map(v => `<button class="${view === v ? 'on' : ''}" data-act="compare-view" data-view="${v}">${VIEW_NAME[v]}から</button>`).join('')}</div>
       <div class="compare cols${meta.values.length}">${meta.values.map(v => `<figure class="${String(v) === String(std) ? 'on' : ''}">${comparePic(meta.key, view, v, s.params)}<figcaption>${esc(label(v))}${String(v) === String(std) ? '<i>見本</i>' : ''}</figcaption></figure>`).join('')}</div>
       <div class="axis-scale"><span>${meta.scale[0]}</span><span>→</span><span>${meta.scale[1]}</span></div>`;
   }
@@ -637,7 +646,7 @@
       case 'close-sheet': closeSheet(); rerender(); break;
       case 'view': ui.view = el.dataset.view; rerender(); break;
       case 'compare-axis': {
-        ui.compareAxis = el.dataset.key; ui.compareView = compareMeta(el.dataset.key).views[0]; rerender();
+        ui.compareAxis = el.dataset.key; ui.compareView = compareViews(el.dataset.key)[0]; rerender();
         const s = byId(location.hash.split('/')[2]); if (s) track(s.id, 'compare');
         break;
       }

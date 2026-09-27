@@ -237,6 +237,10 @@ window.HM_COMPARE_IMAGES = {
   bangShape: {
     front: { natural: 'img/compare/bangs-front-natural.png', side: 'img/compare/bangs-front-side.png', center: 'img/compare/bangs-front-center.png', up: 'img/compare/bangs-front-up.png' },
     side: { natural: 'img/compare/bangs-side-natural.png', side: 'img/compare/bangs-side-side.png', center: 'img/compare/bangs-side-center.png', up: 'img/compare/bangs-side-up.png' }
+  },
+  // 耳まわりは横のみ。正面は「半分かかる」が「出す」と見分けられず作り直し中（docs/image-review.md）
+  ear: {
+    side: { out: 'img/compare/ears-side-out.png', half: 'img/compare/ears-side-half.png', cover: 'img/compare/ears-side-cover.png' }
   }
 };
 

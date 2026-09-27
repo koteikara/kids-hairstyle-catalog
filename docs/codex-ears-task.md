@@ -124,3 +124,24 @@ Web上の写真や `docs/references.csv` のURL先の画像は、生成ツール
 |---|---|---|---|
 
 作り直した場合は、何が問題で、指示文に何を書き足したかも書く。
+
+## 8. 作り直し：正面の比較（2026-09-27 追記）
+
+横の比較は合格・登録済み。正面の比較は、**「半分かかる」が「出す」とほぼ同じ絵**で、耳に髪がかぶっていなかったため不合格にした（不採用版は `img/compare/drafts/ears-front-*-r1.png`）。正面だけを作り直す。
+
+3章の正面の指示文の最後に、次を足して生成する（最大3回）。
+
+```text
+【いちばん大事な点】2つ目の「半分かかる」は、1つ目の「出す」とはっきり違って見えるようにする。正面から見て、耳の上半分（耳のいちばん上から真ん中の高さまで）が、横の髪で完全におおわれていて見えない。見えるのは耳の下半分（耳たぶのあたり）だけ。横の髪は耳の真ん中の高さまで下りている。1つ目の「出す」では、横の髪は耳の上端より上で終わり、耳の上端まで全部見える。3つを並べたとき、耳の見えている面積が「全部 → 下半分だけ → ほとんどなし」と、段階的に小さくなること。
+```
+
+合格したら `img/compare/ears-front-*.png` に分割し、`js/data.js` の `HM_COMPARE_IMAGES.ear` に `front` を足す（`side` はそのまま残す）。
+
+```js
+ear: {
+  front: { out: 'img/compare/ears-front-out.png', half: 'img/compare/ears-front-half.png', cover: 'img/compare/ears-front-cover.png' },
+  side: { out: 'img/compare/ears-side-out.png', half: 'img/compare/ears-side-half.png', cover: 'img/compare/ears-side-cover.png' }
+}
+```
+
+5章のチェックに加えて、**分割した `ears-front-out.png` と `ears-front-half.png` を並べて、耳の見え方がはっきり違うこと**を必ず確かめる。git のコミットやpushはしない。
