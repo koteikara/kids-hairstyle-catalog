@@ -416,7 +416,8 @@ window.HM_AXES = [
 ];
 
 // 編集部のおすすめ（ホームに並べる順）。人気の数字は表示しない（docs/spec.md 8章の決定8）
-window.HM_PICKS = ['natural', 'twoblock', 'mash', 'sports', 'centerpart', 'upbang'];
+// 性別で分けず、男の子に多い髪型と女の子に多い髪型を交互に並べる。女の子は長さがばらけるように選んだ（ショート・ボブ・ミディアム・ロング）
+window.HM_PICKS = ['natural', 'g-shortbob', 'twoblock', 'g-medium', 'mash', 'g-pattsunlong', 'sports', 'g-roundshort', 'centerpart', 'upbang'];
 
 // 髪型の英語名（見出しの添え）
 (function () {
