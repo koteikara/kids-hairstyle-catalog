@@ -348,10 +348,11 @@ window.HM_IMAGES = {
   // 再生成版をレビューで採用（docs/image-review.md）。softmohi は中央の高さが控えめで条件付き
   upbang: { front: 'img/styles/upbang-front.png', side: 'img/styles/upbang-side.png', back: 'img/styles/upbang-back.png' },
   softmohi: { front: 'img/styles/softmohi-front.png', side: 'img/styles/softmohi-side.png', back: 'img/styles/softmohi-back.png' },
-  // 女の子の髪型（Codexで生成、2026-09-28 レビューで採用）。g-bluntbob は長さがぱっつんボブと近く作り直し中
+  // 女の子の髪型（Codexで生成、2026-09-28 レビューで採用）
   'g-roundshort': { front: 'img/styles/g-roundshort-front.png', side: 'img/styles/g-roundshort-side.png', back: 'img/styles/g-roundshort-back.png' },
   'g-shortbob': { front: 'img/styles/g-shortbob-front.png', side: 'img/styles/g-shortbob-side.png', back: 'img/styles/g-shortbob-back.png' },
   'g-pattsunbob': { front: 'img/styles/g-pattsunbob-front.png', side: 'img/styles/g-pattsunbob-side.png', back: 'img/styles/g-pattsunbob-back.png' },
+  'g-bluntbob': { front: 'img/styles/g-bluntbob-front.png', side: 'img/styles/g-bluntbob-side.png', back: 'img/styles/g-bluntbob-back.png' },
   'g-medium': { front: 'img/styles/g-medium-front.png', side: 'img/styles/g-medium-side.png', back: 'img/styles/g-medium-back.png' },
   'g-pattsunlong': { front: 'img/styles/g-pattsunlong-front.png', side: 'img/styles/g-pattsunlong-side.png', back: 'img/styles/g-pattsunlong-back.png' },
   'g-nobanglong': { front: 'img/styles/g-nobanglong-front.png', side: 'img/styles/g-nobanglong-side.png', back: 'img/styles/g-nobanglong-back.png' },
