@@ -7,3 +7,7 @@ img/**/drafts/
 # OS・エディタ
 .DS_Store
 Thumbs.db
+
+# 見比べ用の一時画像
+check-*.png
+montage.png

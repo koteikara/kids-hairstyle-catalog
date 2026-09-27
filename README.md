@@ -42,7 +42,7 @@ node serve.js
 
 - 本番のイラストは、Web上のヘアスタイル写真を参考に特徴を文章化し、人物や構図を新しくして作る。手順とルールは [docs/illustration-guide.md](docs/illustration-guide.md)。
 - 参考写真の記録は [docs/references-template.csv](docs/references-template.csv) の形式で行う。写真ファイルはリポジトリに入れない。
-- Codexに画像を作らせるときの作業指示は [docs/codex-image-task.md](docs/codex-image-task.md)。3方向を並べた1枚は `scripts/split-sheet.ps1` で3枚に分ける。刈り上げ比較画像の作業指示は [docs/codex-fade-task.md](docs/codex-fade-task.md)、前髪の比較画像は [docs/codex-bangs-task.md](docs/codex-bangs-task.md)、耳まわりは [docs/codex-ears-task.md](docs/codex-ears-task.md)。
+- Codexに画像を作らせるときの作業指示は [docs/codex-image-task.md](docs/codex-image-task.md)。3方向を並べた1枚は `scripts/split-sheet.ps1` で3枚に分ける。刈り上げ比較画像の作業指示は [docs/codex-fade-task.md](docs/codex-fade-task.md)、前髪の比較画像は [docs/codex-bangs-task.md](docs/codex-bangs-task.md)、耳まわりは [docs/codex-ears-task.md](docs/codex-ears-task.md)。似た髪型を並べて見比べるには `scripts/montage-styles.ps1`。
 - 画像生成用の指示文は [docs/illustration-prompts.md](docs/illustration-prompts.md)。`node scripts/build-prompts.js` で `js/data.js` から作り直せる。
 - 完成画像は `js/data.js` の `HM_IMAGES`（髪型ごとの正面・横・後ろ）と `HM_FADE_IMAGES`（刈り上げ比較）に登録する。登録がない髪型は `js/illust.js` の簡易図で代わりに表示する。
 
