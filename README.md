@@ -1,5 +1,7 @@
 # ヘアみっけ（kids-hairstyle-catalog）
 
+公開版：https://koteikara.github.io/kids-hairstyle-catalog/ （スマホで開くのがおすすめ）
+
 小学生の親子が、イラストを見ながら現実的な髪型を選び、美容師さんに見せるカードを作るためのスマートフォン向けWebアプリのプロトタイプ。
 
 ## 仕様とロードマップ
