@@ -232,7 +232,13 @@ window.HM_COMPARE_AXES = [
 // 比較画像の登録先：軸 → 向き → 値。刈り上げは配列（添字＝値）、ほかは値をキーにしたオブジェクト
 //   例：bangShape: { front: { natural: 'img/compare/bangs-front-natural.png', ... }, side: { ... } }
 //   登録がない軸は、詳細画面で「準備中」と表示する
-window.HM_COMPARE_IMAGES = { fade: window.HM_FADE_IMAGES };
+window.HM_COMPARE_IMAGES = {
+  fade: window.HM_FADE_IMAGES,
+  bangShape: {
+    front: { natural: 'img/compare/bangs-front-natural.png', side: 'img/compare/bangs-front-side.png', center: 'img/compare/bangs-front-center.png', up: 'img/compare/bangs-front-up.png' },
+    side: { natural: 'img/compare/bangs-side-natural.png', side: 'img/compare/bangs-side-side.png', center: 'img/compare/bangs-side-center.png', up: 'img/compare/bangs-side-up.png' }
+  }
+};
 
 // 調整軸（相談メモで選ぶ項目）。希望を選ぶ画面・相談メモ・相談モード・比較画像はこの一覧を参照する（docs/spec.md 4-2）
 //   key: 相談メモでの項目名（len・bang は見本からの相対：-1 短め／0 見本どおり／1 長め）
