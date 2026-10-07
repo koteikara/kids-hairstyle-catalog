@@ -56,6 +56,8 @@ window.HM_LABELS = {
 
 window.HM_FILTERS = [
   { key: 'group', label: '髪の長さ', options: [['short', 'ショート'], ['bob', 'ボブ'], ['medium', 'ミディアム'], ['long', 'ロング']] },
+  // 髪質からの逆引き：選んだ髪質で「注意」になっている髪型を外す（複数選ぶと、すべてに合う髪型だけ）。HM_CARE の目安を使う
+  { key: 'hairType', label: '髪質（目安）', options: [['straight', '直毛・かため'], ['wavy', 'くせ毛'], ['thick', '多い・太い'], ['thin', '少ない・細い'], ['cowlick', '生えぐせが強い']] },
   { key: 'top', label: 'ショートの長さ', options: [['1', '短め'], ['2', 'ふつう'], ['3', '長め']] },
   { key: 'bang', label: '前髪', options: [['none', 'ほぼなし'], ['short', '短め'], ['brow', 'まゆ毛くらい'], ['long', 'まゆ下'], ['up', '上げる・立てる']] },
   { key: 'ear', label: '耳まわり', options: [['out', '耳を出す'], ['half', '半分かかる'], ['cover', 'かくれる']] },

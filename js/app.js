@@ -173,12 +173,28 @@
     const q = ui.q.trim();
     let list = S.filter(s => Object.entries(ui.filters).every(([k, set]) => {
       if (!set.size) return true;
+      if (k === 'hairType') return [...set].every(t => hairRating(s, t) !== 'care');   // 髪質はすべてに合うもの
       const vals = filterValues(s, k);
       return [...set].some(x => vals.has(x));
     }));
     if (q) list = list.filter(s => [s.name, s.en, s.catch, ...s.tags].join(' ').toLowerCase().includes(q.toLowerCase()));
     if (ui.sort === 'easy') list = list.slice().sort((a, b) => a.effort - b.effort);
+    if (ui.sort === 'hairType') list = list.slice().sort((a, b) => hairScore(b) - hairScore(a));
     return list;
+  }
+  // 髪質との相性（HM_CARE の目安）。good 2・ok 1・care 0 点。目安がない髪型は ok あつかい
+  const HAIR_TYPES = ['straight', 'wavy', 'thick', 'thin', 'cowlick'];
+  const hairRating = (s, t) => (s.requirements && s.requirements.hairTypes[t] || {}).rating || 'ok';
+  const pickedHairTypes = () => ui.filters.hairType && ui.filters.hairType.size ? [...ui.filters.hairType] : HAIR_TYPES;
+  const hairScore = s => pickedHairTypes().reduce((n, t) => n + ({ good: 2, ok: 1, care: 0 })[hairRating(s, t)], 0);
+  // 一覧のタグ：髪質で探しているときは、選んだ髪質との相性を出す
+  function hairTag(s) {
+    const picked = ui.filters.hairType && ui.filters.hairType.size ? [...ui.filters.hairType] : null;
+    if (!picked && ui.sort !== 'hairType') return '';
+    if (!picked) { const good = HAIR_TYPES.filter(t => hairRating(s, t) === 'good').length, care = HAIR_TYPES.filter(t => hairRating(s, t) === 'care').length; return `向いている ${good}・注意 ${care}`; }
+    if (picked.length === 1) return `${L.hairType[picked[0]]}：${L.rating[hairRating(s, picked[0])]}`;
+    const good = picked.filter(t => hairRating(s, t) === 'good').length;
+    return good ? `えらんだ髪質に向いている ${good}` : 'えらんだ髪質：ふつう';
   }
   function toggleFilter(key, val) {
     const set = ui.filters[key] || (ui.filters[key] = new Set());
@@ -235,7 +251,7 @@
     const saved = store.saved.includes(s.id);
     return `<article class="cell">
       <a href="#/style/${s.id}" aria-label="${esc(s.name)}の詳細">${pic(s, 'front', s.name)}
-        <div class="cap"><span class="no">No.${s.no}</span><b>${esc(s.name)}</b><span class="tag">${tagFor(s)}</span></div></a>
+        <div class="cap"><span class="no">No.${s.no}</span><b>${esc(s.name)}</b><span class="tag">${hairTag(s) || tagFor(s)}</span></div></a>
       <button class="save ${saved ? 'on' : ''}" data-act="save" data-id="${s.id}" aria-pressed="${saved}" aria-label="ほぞん">${saved ? '♥' : '♡'}</button>
     </article>`;
   }
@@ -287,12 +303,13 @@
         <button class="clear" data-act="clear">すべて解除</button></div>` : ''}
       <div class="count-row"><span class="big">${String(list.length).padStart(2, '0')}<small>件</small></span>
         <span class="tools">
-          <select data-act="sort" aria-label="ならび順"><option value="recommend" ${ui.sort === 'recommend' ? 'selected' : ''}>編集部の順</option><option value="easy" ${ui.sort === 'easy' ? 'selected' : ''}>セットがかんたん</option></select>
+          <select data-act="sort" aria-label="ならび順"><option value="recommend" ${ui.sort === 'recommend' ? 'selected' : ''}>編集部の順</option><option value="easy" ${ui.sort === 'easy' ? 'selected' : ''}>セットがかんたん</option><option value="hairType" ${ui.sort === 'hairType' ? 'selected' : ''}>髪質に合う順</option></select>
           <button class="tag" data-act="open-filter">しぼりこみ ▾</button>
         </span></div>`;
     gr.innerHTML = list.length
       ? `<div class="grid">${list.map(cell).join('')}</div>${S.some(isGirl) ? '' : '<p class="list-note">女の子の髪型は準備中です。</p>'}<div class="list-end">— END OF LIST —</div>`
       : `<div class="empty">条件に合う髪型がありません。<br>条件を少しへらしてみてください。</div>`;
+    if (ui.filters.hairType && ui.filters.hairType.size || ui.sort === 'hairType') gr.insertAdjacentHTML('afterbegin', '<p class="list-note">髪質との相性は、資料をもとにした目安です。「注意」の髪型も、美容師さんと相談すればできることがあります。</p>');
   }
 
   function openFilter() {
