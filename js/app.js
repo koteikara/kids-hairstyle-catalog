@@ -340,6 +340,7 @@
         <ul class="bullets">${s.variantNotes.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
         <p class="note-line">美容師さんと相談して決めてね。</p>
       </section>` : ''}
+      ${careSection(s)}
       <section class="sec">
         <div class="sec-title"><h2>美容師さんへの伝え方</h2><span class="en">FOR STYLIST</span></div>
         <ul class="bullets">${s.stylist.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
@@ -367,6 +368,25 @@
       ['セット', `<b>${L.effort[s.effort]}</b>・${L.wax[s.wax]}`]
     ];
     return `<table class="spec">${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</table>`;
+  }
+
+  // 再現しやすさ・手入れ（資料から作った目安。監修なし）
+  function careSection(s) {
+    const r = s.requirements, m = s.maintenance;
+    if (!r && !m) return '';
+    const order = ['straight', 'wavy', 'thick', 'thin', 'cowlick'];
+    const types = r && r.hairTypes ? order.filter(k => r.hairTypes[k]).map(k => [k, r.hairTypes[k]]) : [];
+    const rows = [];
+    if (r && r.length) rows.push(['必要な長さ', esc(r.length)]);
+    if (m && m.cutWeeks) rows.push(['カットの間隔', `<b>${m.cutWeeks[0] === m.cutWeeks[1] ? m.cutWeeks[0] : m.cutWeeks.join('〜')}週間</b>ごと<small>形をきれいに保つなら。${esc(m.cutNote || '')}</small>`]);
+    if (m && m.morning) rows.push(['朝のセット', esc(m.morning)]);
+    if (m && m.growOut) rows.push(['のびてきたら', esc(m.growOut)]);
+    return `<section class="sec">
+        <div class="sec-title"><h2>再現しやすさ・手入れ<small class="tag-guide">目安</small></h2><span class="en">CARE</span></div>
+        ${rows.length ? `<table class="spec">${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</table>` : ''}
+        ${types.length ? `<h3 class="sub">髪質との相性</h3><ul class="hairtypes">${types.map(([k, v]) => `<li class="${v.rating}"><b>${L.hairType[k]}</b><em>${L.rating[v.rating]}</em>${v.note ? `<small>${esc(v.note)}</small>` : ''}</li>`).join('')}</ul>` : ''}
+        <p class="note-line">資料をもとにした目安です。髪質や生えぐせで変わるので、最後は美容師さんと相談してね。</p>
+      </section>`;
   }
 
   // 違いを比べる：軸のタブ、向きの切りかえ、同じ頭で値だけが違う比較画像

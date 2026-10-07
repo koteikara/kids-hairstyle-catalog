@@ -317,3 +317,14 @@ img { display: block; }
 
 /* 画像がまだない髪型 */
 .art.ph { aspect-ratio: 10 / 11; display: grid; place-items: center; text-align: center; font-size: 12px; font-weight: 700; color: var(--mute); background: repeating-linear-gradient(45deg, #fff 0 8px, var(--panel) 8px 16px); }
+
+/* 再現しやすさ・手入れ（目安） */
+.tag-guide { display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 700; border: 1.5px solid var(--ink); padding: 0 6px; vertical-align: middle; }
+.sub { font-size: 13px; margin: 14px 0 6px; }
+.hairtypes { list-style: none; margin: 0; padding: 0; }
+.hairtypes li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 8px 0; border-bottom: 1.5px solid var(--hair); font-size: 14px; }
+.hairtypes li:last-child { border-bottom: 0; }
+.hairtypes em { font-style: normal; font-size: 12px; font-weight: 700; padding: 1px 8px; border: 1.5px solid var(--ink); align-self: start; }
+.hairtypes li.good em { background: var(--ink); color: #fff; }
+.hairtypes li.care em { border-color: var(--red); color: var(--red); }
+.hairtypes small { grid-column: 1 / -1; color: var(--mute); font-size: 12px; }
